@@ -37,10 +37,44 @@ void min_tx_byte(uint8_t port, uint8_t byte)
   // If there's no space, spin waiting for space
   uint32_t n;
   do {
-    n = Serial1.write(&byte, 1U);
+    n = Serial.write(&byte, 1U);
+    //n = Serial1.write("Sending byte" + &byte +"\n");
   }
   while(n == 0);
 }
+
+void write_variable(){
+   //delay(1000);
+  //For sending time
+  uint8_t tx_buf [32];
+  tx_buf[0] = 'Z' | 0x80;
+  for(int i = 1; i <= 4; i++){
+    tx_buf[i] = 0x33;
+  }
+   min_send_frame(&min_ctx, 0x33, tx_buf, 0x05);
+}
+
+void read_variable(){
+  uint8_t rx_buf [32];
+  size_t buf_len;
+  if(Serial.available() > 0) {
+    buf_len = Serial.readBytes(rx_buf, 32U);
+  }
+  else {
+    buf_len = 0;
+  }
+ min_poll(&min_ctx, rx_buf, (uint8_t)buf_len);
+
+ Serial1.printf("Recieved message %c \n", min_ctx.rx_frame_payload_buf[0]);
+ Serial1.printf("%d", min_ctx.rx_frame_payload_buf[1]);
+ Serial1.printf("%d", min_ctx.rx_frame_payload_buf[2]);
+ Serial1.printf("%d", min_ctx.rx_frame_payload_buf[3]);
+ Serial1.printf("%d", min_ctx.rx_frame_payload_buf[4]);
+ Serial1.printf("\n");
+
+
+}
+
 
 // Tell MIN the current time in milliseconds.
 uint32_t min_time_ms(void)
@@ -75,16 +109,17 @@ void loop() {
   size_t buf_len;
 
   
-  if(Serial.available() > 0) {
+  /*if(Serial.available() > 0) {
     buf_len = Serial.readBytes(buf, 32U);
   }
   else {
     buf_len = 0;
-  }
+  }*/
   /*buf[0] = 'h';
   buf[1] = 'i';
   buf_len = 3;*/
-  delay(1000);
-  min_poll(&min_ctx, (uint8_t *)buf, (uint8_t)buf_len);
-  Serial1.printf("Recieved message %s \n", min_ctx.rx_frame_payload_buf);
+  write_variable();
+  Serial1.print("Finished sending frame\n");
+  read_variable();
+  //Serial.printf("%c%i\n", message, zeit);
 }
