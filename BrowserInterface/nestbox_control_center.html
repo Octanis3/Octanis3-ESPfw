@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width">
+
+    <title>Nestbox Control Center</title>
+
+    <style>
+      html, pre {
+        font-family: sans-serif;
+      }
+
+      body {
+        width: 500px;
+        margin: 0 auto;
+        background-color: #ccc;
+      }
+
+      pre {
+        line-height: 1.5;
+        letter-spacing: 0.05rem;
+        padding: 1rem;
+        background-color: white;
+      }
+
+      label {
+        width: 200px;
+        margin-right: 33px;
+      }
+
+      select {
+        width: 350px;
+        padding: 5px;
+      }
+
+    </style>
+    <!--[if lt IE 9]>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.js"></script>
+    <![endif]-->
+  </head>
+
+  <body>
+    <h1>Nestbox Control Center</h1>
+
+    <h4>Current time on your computer (UTC): <em id="time_local">?</em></h4>
+
+    <h4>Current time on the nestbox (UTC): <em id="time_remote">?</em></h4>
+
+     <button type="button" id="btn_fetch_time">Get time from the Nestbox</button> 
+     <button type="button" id="btn_set_time">Set time on the Nestbox to browser time</button> 
+
+    <pre>
+
+    </pre>
+
+    <script>
+      var poemDisplay = document.querySelector('pre');
+      var btnFetch = document.getElementById('btn_fetch_time');
+      var btnSet = document.getElementById('btn_set_time');
+
+      var timestampRemoteDisplay = document.getElementById('time_remote');
+
+
+      function updateClock()
+      {
+        var timestampDisplay = document.getElementById('time_local');
+
+        var date = new Date();
+        var timestamp = date.getTime();
+        timestampDisplay.textContent = timestamp;
+
+        setTimeout(updateClock, 1000);
+      }
+      updateClock();
+
+      btnFetch.onclick = function() {
+      console.log("fetch time")    
+        var url = "http://www.nestbox.local/z";
+        fetch(url).then(function(response) {
+          response.text().then(function(text) {
+            timestampRemoteDisplay.textContent = text;
+          });
+        });  
+      };
+
+      btnSet.onclick = function() {
+      console.log("set time")    
+        var url = "http://www.nestbox.local/time";
+        fetch(url).then(function(response) {
+          response.text().then(function(text) {
+            timestampRemoteDisplay.textContent = text;
+          });
+        });  
+      };
+
+    </script>
+  </body>
+</html>

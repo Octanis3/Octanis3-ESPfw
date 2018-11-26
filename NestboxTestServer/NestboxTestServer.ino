@@ -40,7 +40,7 @@ const byte DNS_PORT = 53;
 IPAddress apIP(192, 168, 1, 1);
 
 DNSServer dnsServer;
-ESP8266WebServer server ( 80 );
+ESP8266WebServer server ( 80   );
 
 int ln = 0;
 String TimeDate = "";
@@ -108,7 +108,7 @@ short in_out_mem[TABLE_LENGTH];
 
 void handleRoot() {
   
-  updateTime();
+  //updateTime();
   
   digitalWrite ( led, 1 );
   char temp[1200];
@@ -129,7 +129,6 @@ void handleRoot() {
   <body>\
     <h1>Nestbox Passage Monitoring </h1>\
     <p>Uptime: %02d:%02d:%02d</p>\
-
     <h3>Last 10 ID's read:</h3>",  
     hr, min % 60, sec % 60, buffer
   );
@@ -152,7 +151,6 @@ void handleRoot() {
   
     
    String page_end = "</table><br><br><br>\
-    //<img src=\"http://nestbox.octanis.org/assets/img/owl.png\"/>\
   </body>\
 </html>";
 
@@ -162,6 +160,15 @@ void handleRoot() {
   delay(50);
   digitalWrite ( led, 0 );
 }
+
+void handleTimestamp() {
+    
+  String ts = "123456789";
+  
+  server.send ( 200, "text/plain", ts );
+  delay(50);
+}
+
 
 void handleUpdateTable(){
   if( ! server.hasArg("cur-time") || server.arg("cur-time")) { // If the POST request doesn't have username and password data
@@ -234,6 +241,8 @@ void setup ( void ) {
 
 
   server.on ( "/", handleRoot );
+    server.on ( "/Z", handleTimestamp );
+
   server.on ( "/inline", []() {
     server.send ( 200, "text/plain", "this works as well" );
   } );
