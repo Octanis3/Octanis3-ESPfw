@@ -42,12 +42,16 @@
   </head>
 
   <body>
+
+    <h1>Hello World<em></h1>
     <h1>Nestbox Control Center</h1>
 
     <h4>Current time on your computer (UTC): <em id="time_local">?</em></h4>
 
     <h4>Current time on the nestbox (UTC): <em id="time_remote">?</em></h4>
 
+
+     <a href="http://www.nestbox.local/Hello_World"><button type="button" id="Helloid">Hello_World</button></a>
      <button type="button" id="btn_fetch_time">Get time from the Nestbox</button> 
      <button type="button" id="btn_set_time">Set time on the Nestbox to browser time</button> 
 
@@ -65,13 +69,19 @@
 
       function updateClock()
       {
-        var timestampDisplay = document.getElementById('time_local');
-
         var date = new Date();
-        var timestamp = date.getTime();
+        var t = date.getTime();
+
+        var timestampDisplay = document.getElementById('time_local');
+        
+        var dt = new Date(t);
+        var hr = dt.getHours();
+        var m = "0" + dt.getMinutes();
+        var s = "0" + dt.getSeconds();
+        var timestamp =  hr+ ':' + m.substr(-2) + ':' + s.substr(-2); 
         timestampDisplay.textContent = timestamp;
 
-        setTimeout(updateClock, 1000);
+        setTimeout(updateClock, 1);
       }
       updateClock();
 
@@ -85,16 +95,7 @@
         });  
       };
 
-      btnSet.onclick = function() {
-      console.log("set time")    
-        var url = "http://www.nestbox.local/time";
-        fetch(url).then(function(response) {
-          response.text().then(function(text) {
-            timestampRemoteDisplay.textContent = text;
-          });
-        });  
-      };
-
+        
     </script>
   </body>
 </html>
