@@ -94,11 +94,15 @@ uint32_t read_variable(char* code){
 
  for(int i=1; i<min_ctx.rx_frame_payload_bytes; i++)
  {
-   Serial1.printf("%d", min_ctx.rx_frame_payload_buf[i]);
-   result = result<<8 + min_ctx.rx_frame_payload_buf[i];
+   Serial1.printf("raw: %d \n", min_ctx.rx_frame_payload_buf[i]);
+   result = (result<<8) + min_ctx.rx_frame_payload_buf[i];
+   Serial1.printf("Parsed value: %d \n", result);
+
  }
  
    Serial1.printf("\n");
+   Serial1.printf("Parsed value: %d \n", result);
+
    return result;
 }
 
@@ -121,12 +125,14 @@ void min_application_handler(uint8_t min_id, uint8_t *min_payload, uint8_t len_p
 //The functions for the DNS server
 
 void timeUpdate(){
-  uint32_t value = 1234;
+  static uint32_t value = 1234;
+
+  value = value + 100;      
   char code;
   write_variable('Z', 4, value);
   delay(100);
   value = read_variable(&code);
-  String t = String(value);
+  String t = String(value, DEC);
   server.send(200, "text/plain", code+t);
 }
 
@@ -136,7 +142,22 @@ void batteryUpdate(){
   request_variable('B');
   delay(100);
   value = read_variable(&code);
-  String t = String(value);
+  String t = String(value, DEC);
+  server.send(200, "text/plain", code+t);
+}
+
+void heartbeatUpdate(){
+  uint32_t value = 0;
+  char code;
+  request_variable('H');
+  delay(100);
+  value = read_variable(&code);
+     Serial1.printf("Returned: %d \n", value);
+
+  String t = String(value, DEC);
+
+     Serial1.print(t);
+
   server.send(200, "text/plain", code+t);
 }
 
@@ -214,6 +235,8 @@ void setup() {
 
   server.on ("/time", timeUpdate);
   server.on ("/battery", batteryUpdate);
+  server.on ("/heartbeat", heartbeatUpdate);
+
   server.on ("/Hello_World", HelloWorld);
 
   server.on("/", handleRoot);

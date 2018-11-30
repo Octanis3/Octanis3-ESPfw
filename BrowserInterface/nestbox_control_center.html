@@ -55,6 +55,8 @@
 
      <button type="button" id="btn_set_time" style="width:170px" >Set time on the Nestbox to browser time</button> 
 
+     <h4>Current battery level: <em id="battery_level">?</em></h4>
+
     <pre>
 
     </pre>
@@ -63,8 +65,9 @@
       var poemDisplay = document.querySelector('pre');
       var btnFetch = document.getElementById('btn_fetch_time');
       var btnSet = document.getElementById('btn_set_time');
+      var btnSet = document.getElementById('btn_set_time');
 
-      var timestampRemoteDisplay = document.getElementById('time_remote');
+      var batterylevel = document.getElementById('battery_level');
 
 
       function updateClock()
@@ -81,13 +84,58 @@
         var timestamp =  hr+ ':' + m.substr(-2) + ':' + s.substr(-2); 
         timestampDisplay.textContent = timestamp;
 
-        setTimeout(updateClock, 1);
+        setTimeout(updateClock, 1000);
       }
       updateClock();
 
+      function updateBattery()
+      {
+        var url = "http://www.nestbox.local/battery";
+        fetch(url).then(function(response) {
+          response.text().then(function(text) {
+            if(text[0] == 'B')
+             {
+                var voltage = parseInt(text.substr(1,10))/1000;
+                console.log(voltage);
+
+               batterylevel.textContent = voltage + " Volts";
+             } 
+             else{
+                batterylevel.textContent = "no";
+             }
+            
+          });
+        });  
+        setTimeout(updateBattery, 2000);
+      }
+      updateBattery();
+
+       function ConnectionTest()
+      {
+        // var url = "http://www.nestbox.local/";
+        // fetch(url).then(function(response) {
+        //   response.text().then(function(text) {
+        //     if(text=="Hello world")
+        //     {
+        //       alert("Connected to Nestbox Control Center");
+        //     }
+        //     else
+        //     {
+        //       alert("Connection failed")
+        //     }
+        //   }, function(resp) {alert("Connection failed")});
+        // });  
+
+       
+
+        setTimeout(ConnectionTest, 5000);
+      }
+      ConnectionTest();
+      
+
       btnFetch.onclick = function() {
       console.log("fetch time")    
-        var url = "http://www.nestbox.local/z";
+        var url = "http://www.nestbox.local/time";
         fetch(url).then(function(response) {
           response.text().then(function(text) {
             timestampRemoteDisplay.textContent = text;
@@ -95,6 +143,11 @@
         });  
       };
 
+  
+      // var imgTestInternet = "Hello World";
+      // var urltest = "http://www.nestbox.local/";
+      
+      // fetch(urltest).then(alert("Connected to Nestbox Control Center"),alert("Connection failed"));
         
     </script>
   </body>
