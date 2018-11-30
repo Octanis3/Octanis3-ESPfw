@@ -6,6 +6,10 @@
     <meta name="viewport" content="width=device-width">
 
     <title>Nestbox Control Center</title>
+    <img src="owl.png"
+    height="200px"
+    widht="200px"
+    > 
 
     <style>
       html, pre {
@@ -15,15 +19,9 @@
       body {
         width: 500px;
         margin: 0 auto;
-        background-color: #ccc;
-      }
-
-      pre {
-        line-height: 1.5;
-        letter-spacing: 0.05rem;
-        padding: 1rem;
         background-color: white;
       }
+
 
       label {
         width: 200px;
@@ -43,7 +41,7 @@
 
   <body>
 
-    <h1>Hello World<em></h1>
+    
     <h1>Nestbox Control Center</h1>
 
     <h4>Current time on your computer (UTC): <em id="time_local">?</em></h4>
@@ -51,9 +49,11 @@
     <h4>Current time on the nestbox (UTC): <em id="time_remote">?</em></h4>
 
 
-     <a href="http://www.nestbox.local/Hello_World"><button type="button" id="Helloid">Hello_World</button></a>
-     <button type="button" id="btn_fetch_time">Get time from the Nestbox</button> 
-     <button type="button" id="btn_set_time">Set time on the Nestbox to browser time</button> 
+     <button type="button" id="btn_fetch_time" style="width:130px"
+     >Get time from the Nestbox
+     </button> 
+
+     <button type="button" id="btn_set_time" style="width:170px" >Set time on the Nestbox to browser time</button> 
 
     <pre>
 
