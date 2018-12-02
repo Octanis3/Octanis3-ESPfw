@@ -44,6 +44,9 @@
     
     <h1>Nestbox Control Center</h1>
 
+    <h2 id="online_status">device offline</h2>
+
+
     <h4>Current time on your computer (UTC): <em id="time_local">?</em></h4>
 
     <h4>Current time on the nestbox (UTC): <em id="time_remote">?</em></h4>
@@ -62,12 +65,14 @@
     </pre>
 
     <script>
+      var onlineStatus = document.getElementById('online_status');  
       var timestampRemoteDisplay = document.getElementById('time_remote');
+      var batterylevel = document.getElementById('battery_level');
+
+
       var btnFetch = document.getElementById('btn_fetch_time');
       var btnSet = document.getElementById('btn_set_time');
-      //var btnSet = document.getElementById('btn_set_time');
 
-      var batterylevel = document.getElementById('battery_level');
 
 
       function updateClock()
@@ -110,7 +115,7 @@
       }
       updateBattery();
 
-       function ConnectionTest()
+      function ConnectionTest()
       {
         // var url = "http://www.nestbox.local/";
         // fetch(url).then(function(response) {
@@ -125,9 +130,20 @@
         //     }
         //   }, function(resp) {alert("Connection failed")});
         // });  
-
+        var url = "http://www.nestbox.local/heartbeat";
+        fetch(url).then(function(response) {
+          response.text().then(function(text) {
+            if(text == "H1")
+            {
+              onlineStatus.textContent = "Device online!";
+            }
+            else
+            {
+               onlineStatus.textContent = text;
+            }
+          });
+        });  
        
-
         setTimeout(ConnectionTest, 5000);
       }
       ConnectionTest();

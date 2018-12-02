@@ -89,19 +89,19 @@ uint32_t read_variable(char* code){
   }
  min_poll(&min_ctx, rx_buf, (uint8_t)buf_len);
 
- DEBUG_SERIAL.printf("Recieved message %c \n", min_ctx.rx_frame_payload_buf[0]);
+ //DEBUG_SERIAL.printf("Recieved message %c \n", min_ctx.rx_frame_payload_buf[0]);
  *code = min_ctx.rx_frame_payload_buf[0];
 
  for(int i=1; i<min_ctx.rx_frame_payload_bytes; i++)
  {
-   DEBUG_SERIAL.printf("raw: %d \n", min_ctx.rx_frame_payload_buf[i]);
+   //DEBUG_SERIAL.printf("raw: %d \n", min_ctx.rx_frame_payload_buf[i]);
    result = (result<<8) + min_ctx.rx_frame_payload_buf[i];
-   DEBUG_SERIAL.printf("Parsed value: %d \n", result);
+   //DEBUG_SERIAL.printf("Parsed value: %d \n", result);
 
  }
  
-   DEBUG_SERIAL.printf("\n");
-   DEBUG_SERIAL.printf("Parsed value: %d \n", result);
+   //DEBUG_SERIAL.printf("\n");
+   //DEBUG_SERIAL.printf("Parsed value: %d \n", result);
 
    return result;
 }
@@ -132,8 +132,8 @@ void timeUpdate(){
     {
       String argval = server.arg(0);
       new_time = argval.toInt();
-      DEBUG_SERIAL.println("new timestamp string: "+argval);
-      DEBUG_SERIAL.printf("new timestamp to set: %d\n",new_time);
+     // DEBUG_SERIAL.println("new timestamp string: "+argval);
+     // DEBUG_SERIAL.printf("new timestamp to set: %d\n",new_time);
     }
   }
 
@@ -168,11 +168,11 @@ void heartbeatUpdate(){
   request_variable('H');
   delay(100);
   value = read_variable(&code);
-     DEBUG_SERIAL.printf("Returned: %d \n", value);
+   //  DEBUG_SERIAL.printf("Returned: %d \n", value);
 
   String t = String(value, DEC);
 
-     DEBUG_SERIAL.print(t);
+   //  DEBUG_SERIAL.print(t);
 
   server.send(200, "text/plain", code+t);
 }
