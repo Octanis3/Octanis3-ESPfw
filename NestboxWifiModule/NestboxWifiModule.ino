@@ -9,7 +9,7 @@
 #include <ESP8266WebServer.h>
 #include <DNSServer.h>
 
-#define DEBUG_SERIAL  Serial1 //todo check
+#define DEBUG_SERIAL  Serial1
 #define APP_SERIAL  Serial
 
 const byte DNS_PORT = 53;
@@ -27,7 +27,7 @@ void min_debug_print(const char *fmt, ...)
     va_start (args, fmt );
     vsnprintf(buf, 256, fmt, args);
     va_end (args);
-    Serial.print(buf);
+    DEBUG_SERIAL.print(buf);
 }
 
 #include "min.h"
@@ -39,7 +39,7 @@ struct min_context min_ctx;
 
 uint16_t min_tx_space(uint8_t port)
 {
-  uint16_t n = Serial.availableForWrite();
+  uint16_t n = APP_SERIAL.availableForWrite();
 
   // This is a lie but we will handle the consequences
   return 512U;
@@ -51,8 +51,8 @@ void min_tx_byte(uint8_t port, uint8_t byte)
   // If there's no space, spin waiting for space
   uint32_t n;
   do {
-    n = Serial.write(&byte, 1U);
-    //n = Serial1.write("Sending byte" + &byte +"\n");
+    n = APP_SERIAL.write(&byte, 1U);
+    //n = DEBUG_SERIAL.write("Sending byte" + &byte +"\n");
   }
   while(n == 0);
 }
@@ -81,27 +81,27 @@ uint32_t read_variable(char* code){
   uint8_t rx_buf [32];
   size_t buf_len;
   uint32_t result = 0;
-  if(Serial.available() > 0) {
-    buf_len = Serial.readBytes(rx_buf, 32U);
+  if(APP_SERIAL.available() > 0) {
+    buf_len = APP_SERIAL.readBytes(rx_buf, 32U);
   }
   else {
     buf_len = 0;
   }
  min_poll(&min_ctx, rx_buf, (uint8_t)buf_len);
 
- Serial1.printf("Recieved message %c \n", min_ctx.rx_frame_payload_buf[0]);
+ DEBUG_SERIAL.printf("Recieved message %c \n", min_ctx.rx_frame_payload_buf[0]);
  *code = min_ctx.rx_frame_payload_buf[0];
 
  for(int i=1; i<min_ctx.rx_frame_payload_bytes; i++)
  {
-   Serial1.printf("raw: %d \n", min_ctx.rx_frame_payload_buf[i]);
+   DEBUG_SERIAL.printf("raw: %d \n", min_ctx.rx_frame_payload_buf[i]);
    result = (result<<8) + min_ctx.rx_frame_payload_buf[i];
-   Serial1.printf("Parsed value: %d \n", result);
+   DEBUG_SERIAL.printf("Parsed value: %d \n", result);
 
  }
  
-   Serial1.printf("\n");
-   Serial1.printf("Parsed value: %d \n", result);
+   DEBUG_SERIAL.printf("\n");
+   DEBUG_SERIAL.printf("Parsed value: %d \n", result);
 
    return result;
 }
@@ -118,21 +118,37 @@ void min_application_handler(uint8_t min_id, uint8_t *min_payload, uint8_t len_p
   // In this simple example application we just echo the frame back when we get one
   bool result = min_queue_frame(&min_ctx, min_id, min_payload, len_payload);
   if(!result) {
-    Serial.println("Queue failed");
+    DEBUG_SERIAL.println("Queue failed");
   }
 }
 
 //The functions for the DNS server
 
 void timeUpdate(){
-  static uint32_t value = 1234;
+  uint32_t new_time = 0;
+  if(server.args())
+  {
+    if(server.argName(0) == "set")
+    {
+      String argval = server.arg(0);
+      new_time = argval.toInt();
+      DEBUG_SERIAL.println("new timestamp string: "+argval);
+      DEBUG_SERIAL.printf("new timestamp to set: %d\n",new_time);
+    }
+  }
 
-  value = value + 100;      
+  if(new_time > 0)
+  {
+    write_variable('Z', 4, new_time);
+  }
+  else
+  {
+    request_variable('Z');
+  }
   char code;
-  write_variable('Z', 4, value);
-  delay(100);
-  value = read_variable(&code);
-  String t = String(value, DEC);
+  delay(100); // wait for MSP to process and reply.
+  new_time = read_variable(&code); //read back time from MSP as confirmation
+  String t = String(new_time, DEC);
   server.send(200, "text/plain", code+t);
 }
 
@@ -152,11 +168,11 @@ void heartbeatUpdate(){
   request_variable('H');
   delay(100);
   value = read_variable(&code);
-     Serial1.printf("Returned: %d \n", value);
+     DEBUG_SERIAL.printf("Returned: %d \n", value);
 
   String t = String(value, DEC);
 
-     Serial1.print(t);
+     DEBUG_SERIAL.print(t);
 
   server.send(200, "text/plain", code+t);
 }
@@ -210,13 +226,13 @@ short in_out_mem[TABLE_LENGTH];
 
 
 void setup() {
-  Serial.begin(9600);
-  Serial1.begin(9600);
-  Serial.swap();
-  while(!Serial) {
+  APP_SERIAL.begin(9600);
+  DEBUG_SERIAL.begin(9600);
+  APP_SERIAL.swap();
+  while(!APP_SERIAL) {
     ; // Wait for serial port
   }
-  while(!Serial1) {
+  while(!DEBUG_SERIAL) {
     ; // Wait for serial port
   }
   min_init_context(&min_ctx, 0);
@@ -254,7 +270,7 @@ void loop() {
   server.handleClient();
   /*
   write_variable();
-  Serial1.print("Finished sending frame\n");
+  DEBUG_SERIAL.print("Finished sending frame\n");
   read_variable();*/
-  //Serial.printf("%c%i\n", message, zeit);
+  //APP_SERIAL.printf("%c%i\n", message, zeit);
 }

@@ -62,10 +62,10 @@
     </pre>
 
     <script>
-      var poemDisplay = document.querySelector('pre');
+      var timestampRemoteDisplay = document.getElementById('time_remote');
       var btnFetch = document.getElementById('btn_fetch_time');
       var btnSet = document.getElementById('btn_set_time');
-      var btnSet = document.getElementById('btn_set_time');
+      //var btnSet = document.getElementById('btn_set_time');
 
       var batterylevel = document.getElementById('battery_level');
 
@@ -106,7 +106,7 @@
             
           });
         });  
-        setTimeout(updateBattery, 2000);
+        setTimeout(updateBattery, 30000);
       }
       updateBattery();
 
@@ -143,6 +143,15 @@
         });  
       };
 
+      btnSet.onclick = function() {
+      console.log("Set time")    
+        var url = "http://www.nestbox.local/time?set=123456";
+        fetch(url).then(function(response) {
+          response.text().then(function(text) {
+            timestampRemoteDisplay.textContent = text;
+          });
+        });  
+      };
   
       // var imgTestInternet = "Hello World";
       // var urltest = "http://www.nestbox.local/";
