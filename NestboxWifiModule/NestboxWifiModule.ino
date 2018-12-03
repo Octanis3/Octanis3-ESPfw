@@ -10,7 +10,8 @@
 #include <DNSServer.h>
 
 #define DEBUG_SERIAL  Serial1
-#define APP_SERIAL  Serial
+#define APP_SERIAL    Serial
+//#define USE_SERIAL2   1 //use this if using an external ESP module (NodeMCU)
 
 const byte DNS_PORT = 53;
 IPAddress apIP(192, 168, 1, 1);
@@ -228,7 +229,11 @@ short in_out_mem[TABLE_LENGTH];
 void setup() {
   APP_SERIAL.begin(9600);
   DEBUG_SERIAL.begin(9600);
-  APP_SERIAL.swap();
+
+  #ifdef USE_SERIAL2
+    APP_SERIAL.swap();
+  #endif
+  
   while(!APP_SERIAL) {
     ; // Wait for serial port
   }
