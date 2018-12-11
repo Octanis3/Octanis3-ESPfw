@@ -13,6 +13,8 @@
 #define APP_SERIAL    Serial
 //#define USE_SERIAL2   1 //use this if using an external ESP module (NodeMCU)
 
+#define RESPONSE_DELAY  10 //ms
+
 const byte DNS_PORT = 53;
 IPAddress apIP(192, 168, 1, 1);
 
@@ -147,27 +149,42 @@ void timeUpdate(){
     request_variable('Z');
   }
   char code;
-  delay(100); // wait for MSP to process and reply.
+  delay(RESPONSE_DELAY); // wait for MSP to process and reply.
   new_time = read_variable(&code); //read back time from MSP as confirmation
   String t = String(new_time, DEC);
   server.send(200, "text/plain", code+t);
 }
 
-void batteryUpdate(){
+void serverGetVariable(char code){
   uint32_t value = 0;
-  char code;
-  request_variable('B');
-  delay(100);
+  request_variable(code);
+  delay(RESPONSE_DELAY);
   value = read_variable(&code);
   String t = String(value, DEC);
   server.send(200, "text/plain", code+t);
+}
+
+void batteryUpdate(){
+  serverGetVariable('B');
+}
+
+void weightUpdate(){
+  serverGetVariable('W');
+}
+
+void offsetUpdate(){
+  serverGetVariable('O');
+}
+
+void rfidUpdate(){
+  serverGetVariable('R');
 }
 
 void heartbeatUpdate(){
   uint32_t value = 0;
   char code;
   request_variable('H');
-  delay(100);
+  delay(RESPONSE_DELAY);
   value = read_variable(&code);
    //  DEBUG_SERIAL.printf("Returned: %d \n", value);
 
@@ -246,7 +263,7 @@ void setup() {
   //Begin the wifi and DNS server
   WiFi.mode(WIFI_AP);
   WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
-  WiFi.softAP("Nestbox123");
+  WiFi.softAP("Nestbox#1");
   
   dnsServer.setTTL(300);
   dnsServer.setErrorReplyCode(DNSReplyCode::ServerFailure);
@@ -257,6 +274,9 @@ void setup() {
   server.on ("/time", timeUpdate);
   server.on ("/battery", batteryUpdate);
   server.on ("/heartbeat", heartbeatUpdate);
+  server.on ("/weight", weightUpdate);
+  server.on ("/offset", offsetUpdate);
+  server.on ("/rfid", rfidUpdate);
 
   server.on ("/Hello_World", HelloWorld);
 

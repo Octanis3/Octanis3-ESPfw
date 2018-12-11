@@ -60,6 +60,28 @@
 
      <h4>Current battery level: <em id="battery_level">?</em></h4>
 
+     <table border="1" style="text-align: left;">
+      <tr>
+        <th>meas. ADC offset value: <em id="offset_val">?</em></th>
+        <th>meas. ADC sensor value: <em id="adc_val">?</em></th>
+      </tr>
+      <tr>
+      </tr>
+      <tr>
+        <th>ADC offset: <input type="number" id="ADC_offset" value="0.0"></th>
+        <th>ADC offset: <input type="number" id="ADC_scaling" value="1098.9"></th>
+      </tr>
+    </table>
+
+    <div>
+    </br>
+      <button type="button" id="btn_weight_update" style="width:130px"
+       >Get new weight measurement
+       </button> 
+
+      <h4>Estimated weight: <em id="weight_estimate">?</em></h4>
+    </div>
+
     <pre>
 
     </pre>
@@ -68,10 +90,15 @@
       var onlineStatus = document.getElementById('online_status');  
       var timestampRemoteDisplay = document.getElementById('time_remote');
       var batterylevel = document.getElementById('battery_level');
-
+      var weightEstimate = document.getElementById('weight_estimate');
+      var offsetVal = document.getElementById('offset_val');
+      var adcVal = document.getElementById('adc_val');
+      var b_field = document.getElementById('ADC_offset');
+      var a_field = document.getElementById('ADC_scaling');
 
       var btnFetch = document.getElementById('btn_fetch_time');
       var btnSet = document.getElementById('btn_set_time');
+      var btnWeight = document.getElementById('btn_weight_update');
 
 
 
@@ -93,27 +120,76 @@
       }
       updateClock();
 
+      function parseServerResponse(text)
+      {
+        if(text == "H1")
+        {
+           onlineStatus.textContent = "Device online!";
+        }
+        if(text[0] == 'B')
+        {
+          var voltage = parseInt(text.substr(1,10))/1000;
+          console.log(voltage);
+
+          batterylevel.textContent = voltage + " Volts";
+        } 
+        if(text[0] == 'W')
+        {
+          var weight = parseInt(text.substr(1,20));
+          adcVal.textContent = weight;
+        }
+        if(text[0] == 'O')
+        {
+          var weight = parseInt(text.substr(1,20));
+          offsetVal.textContent = weight;
+        }
+
+
+      }
+
       function updateBattery()
       {
         var url = "http://www.nestbox.local/battery";
         fetch(url).then(function(response) {
           response.text().then(function(text) {
-            if(text[0] == 'B')
-             {
-                var voltage = parseInt(text.substr(1,10))/1000;
-                console.log(voltage);
-
-               batterylevel.textContent = voltage + " Volts";
-             } 
-             else{
-                batterylevel.textContent = "no";
-             }
-            
+            parseServerResponse(text)
           });
         });  
         setTimeout(updateBattery, 30000);
       }
       updateBattery();
+
+      function fetchWeight()
+      {
+        var url = "http://www.nestbox.local/weight";
+        fetch(url).then(function(response) {
+          response.text().then(function(text) {
+            parseServerResponse(text)
+          });
+        });  
+      }
+      
+      function fetchOffset()
+      {
+        var url = "http://www.nestbox.local/offset";
+        fetch(url).then(function(response) {
+          response.text().then(function(text) {
+            parseServerResponse(text)
+          });
+        });  
+      }
+
+      function calculateWeight()
+      {
+        var a = a_field.value;
+        var b = b_field.value;
+        console.log("a="+a)
+        console.log("b="+b)
+
+        var weight_est = (parseInt(adcVal.textContent) - b)/a;
+        weightEstimate.textContent = weight_est;
+
+      }
 
       function ConnectionTest()
       {
@@ -133,14 +209,7 @@
         var url = "http://www.nestbox.local/heartbeat";
         fetch(url).then(function(response) {
           response.text().then(function(text) {
-            if(text == "H1")
-            {
-              onlineStatus.textContent = "Device online!";
-            }
-            else
-            {
-               onlineStatus.textContent = text;
-            }
+            
           });
         });  
        
@@ -167,6 +236,13 @@
             timestampRemoteDisplay.textContent = text;
           });
         });  
+      };
+
+      btnWeight.onclick = function() {
+        console.log("Weight update");
+        fetchWeight();  
+        fetchOffset();
+        calculateWeight();
       };
   
       // var imgTestInternet = "Hello World";
