@@ -1,19 +1,19 @@
 //
 // Echo server the Arduino M0 Pro (based on Atmel SAMD21)
-
+//#define DEBUG_PRINTING
+//#define DEBUG_ESP_HTTP_SERVER
+#define DEBUG_SERIAL  Serial1
+#define APP_SERIAL    Serial
+//#define USE_SERIAL2   1 //use this if using an external ESP module (NodeMCU)
+#define DEBUG_OUTPUT DEBUG_SERIAL
+#define RESPONSE_DELAY  10 //ms
 
 #include <stdarg.h>
-#define DEBUG_PRINTING
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
 #include <DNSServer.h>
 
-#define DEBUG_SERIAL  Serial1
-#define APP_SERIAL    Serial
-//#define USE_SERIAL2   1 //use this if using an external ESP module (NodeMCU)
-
-#define RESPONSE_DELAY  10 //ms
 
 const byte DNS_PORT = 53;
 IPAddress apIP(192, 168, 1, 1);
@@ -155,7 +155,7 @@ void timeUpdate(){
   server.send(200, "text/plain", code+t);
 }
 
-void serverGetVariable(char code){
+inline void serverGetVariable(char code){
   uint32_t value = 0;
   request_variable(code);
   delay(RESPONSE_DELAY);
@@ -180,6 +180,22 @@ void rfidUpdate(){
   serverGetVariable('R');
 }
 
+void triggerTare(){
+  serverGetVariable('t');
+}
+
+void triggerSDflush(){
+   serverGetVariable('F');
+}
+
+void triggerLoadCellOn(){
+   serverGetVariable('L');
+}
+
+void triggerLoadCellOff(){
+   serverGetVariable('l');
+}
+
 void heartbeatUpdate(){
   uint32_t value = 0;
   char code;
@@ -198,15 +214,6 @@ void heartbeatUpdate(){
 void HelloWorld(){
   String t = "Hello World";
   server.send(200, "text/plain", t);
-}
-
-void handleUpdateTable(){
-  if( ! server.hasArg("cur-time") || server.arg("cur-time")) { // If the POST request doesn't have username and password data
-    server.send(400, "text/plain", "400: Invalid Request");         // The request is invalid, so send HTTP status 400
-    return;
-  } else {                                                                              // Username and password don't match
-    server.send(200, "text/html", "<h1>New time, " + server.arg("cur-time") + "!</h1>");
-  }
 }
 
 void handleNotFound() {
@@ -277,11 +284,15 @@ void setup() {
   server.on ("/weight", weightUpdate);
   server.on ("/offset", offsetUpdate);
   server.on ("/rfid", rfidUpdate);
+  server.on ("/t", triggerTare);
+  server.on ("/F", triggerSDflush);
+  server.on ("/L", triggerLoadCellOn);
+  server.on ("/l", triggerLoadCellOff);
 
   server.on ("/Hello_World", HelloWorld);
 
   server.on("/", handleRoot);
-  server.on("/time", HTTP_POST, handleUpdateTable);
+//  server.on("/time", HTTP_POST, handleUpdateTable); // OLD!! 
   server.onNotFound (handleNotFound);
   server.begin();
   DEBUG_SERIAL.println ("HTTP server started");

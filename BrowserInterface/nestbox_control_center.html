@@ -69,16 +69,18 @@
       </tr>
       <tr>
         <th>ADC offset: <input type="number" id="ADC_offset" value="0.0"></th>
-        <th>ADC offset: <input type="number" id="ADC_scaling" value="1098.9"></th>
+        <th>ADC scaling: <input type="number" id="ADC_scaling" value="1098.9"></th>
       </tr>
     </table>
 
     <div>
     </br>
       <button type="button" id="btn_weight_update" style="width:130px"
-       >Get new weight measurement
+       >Get new weight measurement.
        </button> 
-
+        <button type="button" id="btn_offset_update" style="width:130px"
+       >Get last offset value.
+       </button> 
       <h4>Estimated weight: <em id="weight_estimate">?</em></h4>
     </div>
 
@@ -99,6 +101,8 @@
       var btnFetch = document.getElementById('btn_fetch_time');
       var btnSet = document.getElementById('btn_set_time');
       var btnWeight = document.getElementById('btn_weight_update');
+      var btnOffset = document.getElementById('btn_offset_update');
+
 
 
 
@@ -137,11 +141,13 @@
         {
           var weight = parseInt(text.substr(1,20));
           adcVal.textContent = weight;
+                  calculateWeight();
         }
         if(text[0] == 'O')
         {
           var weight = parseInt(text.substr(1,20));
           offsetVal.textContent = weight;
+                  calculateWeight();
         }
 
 
@@ -155,15 +161,16 @@
             parseServerResponse(text)
           });
         });  
-        setTimeout(updateBattery, 30000);
+        setTimeout(updateBattery, 29080);
       }
-      updateBattery();
+      //updateBattery();
 
       function fetchWeight()
       {
         var url = "http://www.nestbox.local/weight";
         fetch(url).then(function(response) {
           response.text().then(function(text) {
+                        console.log("weight resp: "+text)   
             parseServerResponse(text)
           });
         });  
@@ -174,6 +181,7 @@
         var url = "http://www.nestbox.local/offset";
         fetch(url).then(function(response) {
           response.text().then(function(text) {
+            console.log("offset resp: "+text)
             parseServerResponse(text)
           });
         });  
@@ -213,9 +221,9 @@
           });
         });  
        
-        setTimeout(ConnectionTest, 5000);
+        setTimeout(ConnectionTest, 10010);
       }
-      ConnectionTest();
+      //ConnectionTest();
       
 
       btnFetch.onclick = function() {
@@ -241,8 +249,12 @@
       btnWeight.onclick = function() {
         console.log("Weight update");
         fetchWeight();  
-        fetchOffset();
         calculateWeight();
+      };
+
+      btnOffset.onclick = function() {
+        console.log("Offset update");
+        fetchOffset();  
       };
   
       // var imgTestInternet = "Hello World";
