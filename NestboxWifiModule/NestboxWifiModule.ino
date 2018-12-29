@@ -61,7 +61,6 @@ void min_tx_byte(uint8_t port, uint8_t byte)
 }
 
 void write_variable(char code, unsigned int len, uint32_t value){
-   //delay(1000);
   //For sending time
   uint8_t tx_buf [32];
   tx_buf[0] = code | 0x80;
@@ -73,7 +72,6 @@ void write_variable(char code, unsigned int len, uint32_t value){
 }
 
 void request_variable(char code){
-   //delay(1000);
   //For sending time
   uint8_t tx_buf [32];
   tx_buf[0] = code;
@@ -155,10 +153,56 @@ void timeUpdate(){
   server.send(200, "text/plain", code+t);
 }
 
+
+void rtcAlarmUpdate(){
+  uint32_t rtca = 0;
+  if(server.args())
+  {
+    if(server.argName(0) == "ph")
+    {
+      String argval = server.arg(0);
+      uint32_t ph = argval.toInt();
+      rtca = rtca + ph<<24;
+    }
+    if(server.argName(1) == "pm")
+    {
+      String argval = server.arg(1);
+      uint32_t pm = argval.toInt();
+      rtca = rtca + pm<<16;
+    }
+    if(server.argName(2) == "rh")
+    {
+      String argval = server.arg(2);
+      uint32_t rh = argval.toInt();
+      rtca = rtca + rh<<8;
+    }
+    if(server.argName(3) == "rm")
+    {
+      String argval = server.arg(3);
+      uint32_t rm = argval.toInt();
+      rtca = rtca + rm;
+    }
+  }
+
+  if(rtca > 0)
+  {
+    write_variable('S', 4, rtca);
+  }
+  else
+  {
+    request_variable('S');
+  }
+  char code;
+  delay(RESPONSE_DELAY); // wait for MSP to process and reply.
+  rtca = read_variable(&code); //read back time from MSP as confirmation
+  String t = String(rtca, DEC);
+  server.send(200, "text/plain", code+t);
+}
+
+
 inline void serverGetVariable(char code){
   uint32_t value = 0;
   request_variable(code);
-  delay(RESPONSE_DELAY);
   value = read_variable(&code);
   String t = String(value, DEC);
   server.send(200, "text/plain", code+t);
@@ -269,9 +313,27 @@ void setup() {
 
   //Begin the wifi and DNS server
   WiFi.mode(WIFI_AP);
+ 
   WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
-  WiFi.softAP("Nestbox#1");
-  
+  // Do a little work to get a unique-ish name. Append the
+  // last two bytes of the MAC (HEX'd) to "Thing-":
+
+  uint8_t mac[WL_MAC_ADDR_LENGTH];
+  WiFi.softAPmacAddress(mac);
+  String macID = String(mac[WL_MAC_ADDR_LENGTH - 2], HEX) +
+                 String(mac[WL_MAC_ADDR_LENGTH - 1], HEX);
+
+
+  String AP_NameString = "Nestbox_" + macID;
+
+  char AP_NameChar[AP_NameString.length() + 1];
+  memset(AP_NameChar, 0, AP_NameString.length() + 1);
+
+  for (int i=0; i<AP_NameString.length(); i++)
+    AP_NameChar[i] = AP_NameString.charAt(i);
+
+  WiFi.softAP(AP_NameChar);
+
   dnsServer.setTTL(300);
   dnsServer.setErrorReplyCode(DNSReplyCode::ServerFailure);
 
@@ -279,6 +341,7 @@ void setup() {
   dnsServer.start(DNS_PORT, "www.nestbox.local", apIP);
 
   server.on ("/time", timeUpdate);
+  server.on ("/S", rtcAlarmUpdate);
   server.on ("/battery", batteryUpdate);
   server.on ("/heartbeat", heartbeatUpdate);
   server.on ("/weight", weightUpdate);

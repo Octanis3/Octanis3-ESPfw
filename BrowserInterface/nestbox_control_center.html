@@ -119,6 +119,7 @@
 
     <script>
       var onlineStatus = document.getElementById('online_status');  
+      var timestampDisplay = document.getElementById('time_local');
       var timestampRemoteDisplay = document.getElementById('time_remote');
       var batterylevel = document.getElementById('battery_level');
       var weightEstimate = document.getElementById('weight_estimate');
@@ -140,7 +141,6 @@
         var date = new Date();
         var t = date.getTime();
 
-        var timestampDisplay = document.getElementById('time_local');
         
         var dt = new Date(t);
         var hr = dt.getHours();
@@ -177,6 +177,19 @@
           var weight = parseInt(text.substr(1,20));
           offsetVal.textContent = weight;
                   calculateWeight();
+        }
+        if(text[0] == 'Z')
+        {
+          var timeremote = parseInt(text.substr(1,11));
+          console.log(timeremote);
+          
+          var dt = new Date(timeremote*1000);
+          var hr = dt.getHours();
+          var m = "0" + dt.getMinutes();
+          var s = "0" + dt.getSeconds();
+          var timestamp =  hr+ ':' + m.substr(-2) + ':' + s.substr(-2); 
+          timestampRemoteDisplay.textContent = timestamp;
+
         }
 
 
@@ -260,17 +273,20 @@
         var url = "http://www.nestbox.local/time";
         fetch(url).then(function(response) {
           response.text().then(function(text) {
-            timestampRemoteDisplay.textContent = text;
+            parseServerResponse(text);
           });
         });  
       };
 
       btnSet.onclick = function() {
-      console.log("Set time")    
-        var url = "http://www.nestbox.local/time?set=123456";
+        console.log("Set time");
+        var ts = Math.round((new Date()).getTime() / 1000);
+        console.log("epoch = "+ts);
+
+        var url = "http://www.nestbox.local/time?set="+ts;
         fetch(url).then(function(response) {
           response.text().then(function(text) {
-            timestampRemoteDisplay.textContent = text;
+            parseServerResponse(text);
           });
         });  
       };
