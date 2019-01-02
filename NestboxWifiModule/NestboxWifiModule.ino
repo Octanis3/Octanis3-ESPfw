@@ -30,7 +30,7 @@ void min_debug_print(const char *fmt, ...)
   va_start (args, fmt );
   vsnprintf(buf, 256, fmt, args);
   va_end (args);
-  DEBUG_SERIAL.print(buf);
+  //DEBUG_SERIAL.print(buf);
 }
 
 #include "min.h"
@@ -95,15 +95,8 @@ uint32_t read_variable(char* code) {
 
   for (int i = 1; i < min_ctx.rx_frame_payload_bytes; i++)
   {
-    //DEBUG_SERIAL.printf("raw: %d \n", min_ctx.rx_frame_payload_buf[i]);
     result = (result << 8) + min_ctx.rx_frame_payload_buf[i];
-    //DEBUG_SERIAL.printf("Parsed value: %d \n", result);
-
   }
-
-  //DEBUG_SERIAL.printf("\n");
-  //DEBUG_SERIAL.printf("Parsed value: %d \n", result);
-
   return result;
 }
 
@@ -119,7 +112,7 @@ void min_application_handler(uint8_t min_id, uint8_t *min_payload, uint8_t len_p
   // In this simple example application we just echo the frame back when we get one
   bool result = min_queue_frame(&min_ctx, min_id, min_payload, len_payload);
   if (!result) {
-    DEBUG_SERIAL.println("Queue failed");
+   // DEBUG_SERIAL.println("Queue failed");
   }
 }
 
@@ -263,10 +256,6 @@ void heartbeatUpdate() {
   server.send(200, "text/plain", code + t);
 }
 
-void HelloWorld() {
-  String t = "Hello World";
-  server.send(200, "text/plain", t);
-}
 
 void handleNotFound() {
   String message = "File Not Found\n\n";
@@ -284,8 +273,6 @@ void handleNotFound() {
 
   server.send ( 404, "text/plain", message );
 }
-
-
 
 void handleRoot() {
   server.send(200, "text/html", "Hello world");
@@ -350,27 +337,23 @@ void setup() {
   dnsServer.start(DNS_PORT, "www.nestbox.local", apIP);
 
   server.on ("/time", timeUpdate);
-  server.on ("/S", rtcAlarmUpdate);
+  server.on ("/rtcAlarmUpdate", rtcAlarmUpdate);
   server.on ("/battery", batteryUpdate);
   server.on ("/heartbeat", heartbeatUpdate);
   server.on ("/weight", weightUpdate);
   server.on ("/offset", offsetUpdate);
   server.on ("/rfid", rfidUpdate);
-  server.on ("/t", triggerTare);
-  server.on ("/F", triggerSDflush);
-  server.on ("/f", checkSDflush);
-  server.on ("/L", triggerLoadCellOn);
-  server.on ("/l", triggerLoadCellOff);
-  server.on ("/D", rawOffsetUpdate);
-
-
-  server.on ("/Hello_World", HelloWorld);
+  server.on ("/triggerTare", triggerTare);
+  server.on ("/triggerSDflush", triggerSDflush);
+  server.on ("/checkSDflush", checkSDflush);
+  server.on ("/LoadCellOn", triggerLoadCellOn);
+  server.on ("/LoadCellOff", triggerLoadCellOff);
+  server.on ("/rawOffsetUpdate", rawOffsetUpdate);
 
   server.on("/", handleRoot);
-  //  server.on("/time", HTTP_POST, handleUpdateTable); // OLD!!
   server.onNotFound (handleNotFound);
   server.begin();
-  DEBUG_SERIAL.println ("HTTP server started");
+  //DEBUG_SERIAL.println ("HTTP server started");
 }
 
 void loop() {
@@ -379,9 +362,4 @@ void loop() {
 
   dnsServer.processNextRequest();
   server.handleClient();
-  /*
-    write_variable();
-    DEBUG_SERIAL.print("Finished sending frame\n");
-    read_variable();*/
-  //APP_SERIAL.printf("%c%i\n", message, zeit);
 }
