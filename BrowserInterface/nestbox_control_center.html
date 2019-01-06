@@ -33,6 +33,40 @@
         padding: 5px;
       }
 
+      .slidecontainer {
+      width: 96%;
+      }
+
+      .slider {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 25px;
+        background: #d3d3d3;
+        outline: none;
+        opacity: 0.7;
+        -webkit-transition: .2s;
+        transition: opacity .2s;
+      }
+
+      .slider:hover {
+        opacity: 1;
+      }
+
+      .slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 25px;
+        height: 25px;
+        background: #4CAF50;
+        cursor: pointer;
+      }
+
+      .slider::-moz-range-thumb {
+        width: 25px;
+        height: 25px;
+        background: #4CAF50;
+        cursor: pointer;
+      }
     </style>
     <!--[if lt IE 9]>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.js"></script>
@@ -44,12 +78,12 @@
     
     <h1>Nestbox Control Center</h1>
 
-    <h2 id="online_status">device offline</h2>
+    <h2 id="online_status">Please connect to the Nestbox Wi-Fi.</h2>
 
 
-    <h4>Current time on your computer (UTC): <em id="time_local">?</em></h4>
+    <h4>Current time on your Computer: <em id="time_local">?</em></h4>
 
-    <h4>Current time on the nestbox (UTC): <em id="time_remote">?</em></h4>
+    <h4>Current time on the Nestbox: <em id="time_remote">?</em></h4>
 
 
      <button type="button" id="btn_fetch_time" style="width:130px"
@@ -57,6 +91,29 @@
      </button> 
 
      <button type="button" id="btn_set_time" style="width:170px" >Set time on the Nestbox to browser time</button> 
+
+     <div class="slidecontainer">
+      <p>Daily shut-down time: <b id="shdn">8:00</b> CET</p>
+        <input type="range" min="6" max="138" value="48" class="slider" id="shdn_slider">
+      <p>Daily wake-up time: <b id="wake">16:00</b> CET</p>
+        <input type="range" min="6" max="138" value="96" class="slider" id="wake_slider">
+      <p id="rtcwarning" style="color:red;"></p>
+
+    </div>
+    <div>
+      <button type="button" id="btn_get_rtc" style="width:170px"
+     >Fetch programmed shut-down and wake-up times.
+     </button> 
+
+      <button type="button" id="btn_set_rtc" style="width:170px" >Set shut-down and wake-up times</button> 
+    </div>
+
+    <p>Programmed shutdown: Nestbox is asleep form <b id="shdn_dev">?</b> to <b id="wake_dev">?</b> CET.</p>
+
+
+    <hr>
+
+
 
      <h4>Current battery level: <em id="battery_level">?</em></h4>
 
@@ -130,8 +187,70 @@
 
       var btnFetch = document.getElementById('btn_fetch_time');
       var btnSet = document.getElementById('btn_set_time');
+      var btnFetchRTC = document.getElementById('btn_get_rtc');
+      var btnSetRTC = document.getElementById('btn_set_rtc');
+
       var btnWeight = document.getElementById('btn_weight_update');
       var btnOffset = document.getElementById('btn_offset_update');
+
+
+      var shdn_slider = document.getElementById("shdn_slider");
+      var wake_slider = document.getElementById("wake_slider");
+      
+      var shdn_time = document.getElementById("shdn");
+      var wake_time = document.getElementById("wake");
+      var rtcwarning = document.getElementById("rtcwarning");
+      var shdn_dev = document.getElementById("shdn_dev");
+      var wake_dev = document.getElementById("wake_dev");
+
+      // Update the current slider value (each time you drag the slider handle)
+      shdn_slider.oninput = function() {
+        shdn_time.innerHTML = Math.floor(this.value/6) + ":" + (this.value*10-Math.floor(this.value/6)*60);
+        if(shdn_slider.value>wake_slider.value-6)
+        {
+          rtcwarning.innerHTML = "Wake-up time must be at least one hour after shut-down time!"
+        }
+        else
+        {
+          rtcwarning.innerHTML = "";
+        }
+      } 
+
+      // Update the current slider value (each time you drag the slider handle)
+      wake_slider.oninput = function() {
+        wake_time.innerHTML = Math.floor(this.value/6) + ":" + (this.value*10-Math.floor(this.value/6)*60);
+        if(shdn_slider.value>wake_slider.value-6)
+        {
+          rtcwarning.innerHTML = "Wake-up time must be at least one hour after shut-down time!";
+        }
+        else
+        {
+          rtcwarning.innerHTML = "";
+        }
+      }
+
+      btnFetchRTC.onclick = function() {
+        var url = "http://www.nestbox.local/rtcAlarmUpdate";
+        fetch(url).then(function(response) {
+          response.text().then(function(text) {
+            parseServerResponse(text);
+          });
+        });  
+      };
+
+      btnSetRTC.onclick = function() {
+        var ph = "ph="+Math.floor(shdn_slider.value/6-1);
+        var pm = "&pm="+(shdn_slider.value*10-Math.floor(shdn_slider.value/6)*60);
+        var rh = "&rh="+Math.floor(wake_slider.value/6-1);
+        var rm = "&rm="+(wake_slider.value*10-Math.floor(wake_slider.value/6)*60);
+
+        var url = "http://www.nestbox.local/rtcAlarmUpdate?"+ph+pm+rh+rm;
+        fetch(url).then(function(response) {
+          response.text().then(function(text) {
+            parseServerResponse(text);
+          });
+        });  
+      };
 
 
 
@@ -147,7 +266,7 @@
         var m = "0" + dt.getMinutes();
         var s = "0" + dt.getSeconds();
         var timestamp =  hr+ ':' + m.substr(-2) + ':' + s.substr(-2); 
-        timestampDisplay.textContent = timestamp;
+        timestampDisplay.textContent = dt.toLocaleString() //timestamp;
 
         setTimeout(updateClock, 1000);
       }
@@ -155,7 +274,7 @@
 
       function parseServerResponse(text)
       {
-        if(text == "H1")
+        if(text)
         {
            onlineStatus.textContent = "Device online!";
         }
@@ -188,8 +307,20 @@
           var m = "0" + dt.getMinutes();
           var s = "0" + dt.getSeconds();
           var timestamp =  hr+ ':' + m.substr(-2) + ':' + s.substr(-2); 
-          timestampRemoteDisplay.textContent = timestamp;
+          timestampRemoteDisplay.textContent = dt.toLocaleString(); //timestamp;
 
+        }
+        if(text[0] == 'S')
+        {
+          var rtcremote = parseInt(text.substr(1,11));
+          
+          var ph = ((rtcremote>>24) & 0xFF) +1;
+          var pm = (rtcremote>>16) & 0xFF;
+          var rh = ((rtcremote>>8) & 0xFF) + 1;
+          var rm = (rtcremote) & 0xFF;
+
+          shdn_dev.innerHTML =  ph+ ':' + pm; 
+          wake_dev.innerHTML =  rh+ ':' + rm; 
         }
 
 
@@ -203,7 +334,7 @@
             parseServerResponse(text)
           });
         });  
-        setTimeout(updateBattery, 5000);
+        setTimeout(updateBattery, 30000);
       }
       updateBattery();
 
