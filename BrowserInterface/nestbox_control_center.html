@@ -141,9 +141,17 @@
       <h4>Estimated weight: <em id="weight_estimate">?</em></h4>
     </div>
 
-    <pre>
 
+<hr>  
+  <button type="button" id="btn_start_calib" style="width:130px"
+     >Start Calibration mode
+     </button> 
+  <button type="button" id="btn_stop_calib" style="width:130px"
+     >Stop Calibration mode
+     </button> 
+  <p id="calib_status" style="color:black;"></p>
 
+<pre> 
 <table style="width:100%">
   <tr>
   	<th>ID</th>
@@ -193,6 +201,9 @@
       var btnWeight = document.getElementById('btn_weight_update');
       var btnOffset = document.getElementById('btn_offset_update');
 
+      var btnStartCalib = document.getElementById('btn_start_calib');
+      var btnStopCalib = document.getElementById('btn_stop_calib');
+      var calibStatus = document.getElementById('calib_status');
 
       var shdn_slider = document.getElementById("shdn_slider");
       var wake_slider = document.getElementById("wake_slider");
@@ -296,6 +307,17 @@
           var weight = parseInt(text.substr(1,20));
           offsetVal.textContent = weight;
                   calculateWeight();
+        }
+        if(text[0] == 'L')
+        {
+          calibStatus.innerHTML = "Calibration mode STARTED"
+          calibStatus.style = "color:green;"
+
+        }
+        if(text[0] == 'l')
+        {
+          calibStatus.innerHTML = "Calibration mode OFF"
+          calibStatus.style = "color:black;"
         }
         if(text[0] == 'Z')
         {
@@ -431,6 +453,24 @@
       btnOffset.onclick = function() {
         console.log("Offset update");
         fetchOffset();  
+      };
+
+      btnStartCalib.onclick = function() {
+      var url = "http://www.nestbox.local/LoadCellOn";
+        fetch(url).then(function(response) {
+          response.text().then(function(text) {
+            parseServerResponse(text);
+          });
+        });  
+      };
+
+      btnStopCalib.onclick = function() {
+      var url = "http://www.nestbox.local/LoadCellOff";
+        fetch(url).then(function(response) {
+          response.text().then(function(text) {
+            parseServerResponse(text);
+          });
+        });  
       };
   
       // var imgTestInternet = "Hello World";
