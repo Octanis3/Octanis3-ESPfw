@@ -17,6 +17,7 @@
 
 const byte DNS_PORT = 53;
 IPAddress apIP(192, 168, 1, 1);
+String full_macID;
 
 DNSServer dnsServer;
 ESP8266WebServer server ( 80 );
@@ -256,6 +257,10 @@ void heartbeatUpdate() {
   server.send(200, "text/plain", code + t);
 }
 
+void returnMacAddr() {
+  server.send(200, "text/plain", "M" + full_macID);
+}
+
 
 void handleNotFound() {
   String message = "File Not Found\n\n";
@@ -319,8 +324,13 @@ void setup() {
                  String(mac[WL_MAC_ADDR_LENGTH - 2], HEX) +
                  String(mac[WL_MAC_ADDR_LENGTH - 1], HEX);
 
-
   String AP_NameString = "Nestbox_" + macID;
+
+  full_macID = String(mac[0], HEX);
+  for(int i=1;i<WL_MAC_ADDR_LENGTH; i++)
+  {
+      full_macID = full_macID+String(mac[i], HEX);
+  }
 
   char AP_NameChar[AP_NameString.length() + 1];
   memset(AP_NameChar, 0, AP_NameString.length() + 1);
@@ -349,6 +359,7 @@ void setup() {
   server.on ("/LoadCellOn", triggerLoadCellOn);
   server.on ("/LoadCellOff", triggerLoadCellOff);
   server.on ("/rawOffsetUpdate", rawOffsetUpdate);
+  server.on ("/mac", returnMacAddr);
 
   server.on("/", handleRoot);
   server.onNotFound (handleNotFound);
