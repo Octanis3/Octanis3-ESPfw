@@ -120,13 +120,13 @@
      <table border="1" style="text-align: left;">
       <tr>
         <th>meas. ADC offset value: <em id="offset_val">?</em></th>
-        <th>meas. ADC sensor value: <em id="adc_val">?</em></th>
+        <th>meas. ADC sensor value: <em id="adc_val">123</em></th>
       </tr>
       <tr>
       </tr>
       <tr>
         <th>ADC offset: <input type="number" id="ADC_offset" value="0.0"></th>
-        <th>ADC scaling: <input type="number" id="ADC_scaling" value="1098.9"></th>
+        <th>ADC slope: <input type="number" id="ADC_scaling" value="1098.9"></th>
       </tr>
     </table>
 
@@ -137,6 +137,8 @@
        </button> 
         <button type="button" id="btn_offset_update" style="width:130px"
        >Get last offset value.
+       <button type="button" id="get_adc_final_value" style="width:130px"
+       >Get ADC scaling value.
        </button> 
       <h4>Estimated weight: <em id="weight_estimate">?</em></h4>
     </div>
@@ -157,23 +159,63 @@
   	<th>ID</th>
     <th>ADC sensor value</th>
     <th>Weight (g)</th> 
+    <th>Get</th> 
   </tr>
   <tr>
   	<td>N°1</td> 
-   	<td><input type="number" id="1;1" value="0.0"></td>
-	<td><input type="number" id="1;2" value="0.0"></td>		
+   	<td><input type="text" id="adc_sensor_value1" value="?"></td>
+	<td><input type="number" id="manual_weight1" value="110"></td>	
+	<td><button type="button" id="btn_get1" style="width:130px">Get</button></td>
+
   </tr>
   <tr>
   	<td>N°2</td> 
-    <td><input type="number" id="2;1" value="0.0"></td>
-    <td><input type="number" id="2;2" value="0.0"></td>
+    <td><input type="text" id="adc_sensor_value2" value="?"></td>
+    <td><input type="number" id="manual_weight2" value="219"></td>
+    <td><button type="button" id="btn_get2" style="width:130px">Get</button></td>
   </tr>
   <tr>
   	<td>N°3</td> 
-    <td><input type="number" id="3;1" value="0.0"></td>
-    <td><input type="number" id="3;2" value="0.0"></td>
+    <td><input type="text" id="adc_sensor_value3" value="?"></td>
+    <td><input type="number" id="manual_weight3" value="328"></td>
+    <td><button type="button" id="btn_get3" style="width:130px">Get</button></td>
+  </tr>
+  <tr>
+  	<td>N°4</td> 
+    <td><input type="text" id="adc_sensor_value4" value="?"></td>
+    <td><input type="number" id="manual_weight4" value="438"></td>
+    <td><button type="button" id="btn_get4" style="width:130px">Get</button></td>
+  </tr>
+  <tr>
+  	<td>N°5</td> 
+    <td><input type="text" id="adc_sensor_value5" value="?"></td>
+    <td><input type="number" id="manual_weight5" value="547"></td>
+    <td><button type="button" id="btn_get5" style="width:130px">Get</button></td>
   </tr>
 </table>
+<button type="button" id="btn_get_adc_final_value" style="width:150px">Calculate</button>	
+
+<table>
+	<tr>
+	<td></td>
+	<td>Results</td>
+	</tr>
+	<tr>
+	<td>Slope</td>
+	<td><input type="text" id="ADC_slope"></td>
+	</tr>
+	<tr>
+	<td>Intercept</td>
+	<td><input type="text" id="ADC_intercept"></td>
+	</tr>
+	<tr>
+	<td>Correlation</td>
+	<td><input type="text" id="ADC_r2"></td>
+	</tr>
+</table>
+
+
+
 <style>table, th, td {
   border: 1px solid black;
   border-collapse: collapse;
@@ -213,6 +255,33 @@
       var rtcwarning = document.getElementById("rtcwarning");
       var shdn_dev = document.getElementById("shdn_dev");
       var wake_dev = document.getElementById("wake_dev");
+      var adcSensorvalue1 = document.getElementById("adc_sensor_value1");
+      var adcSensorvalue2 = document.getElementById("adc_sensor_value2");
+      var adcSensorvalue3 = document.getElementById("adc_sensor_value3");
+      var adcSensorvalue4 = document.getElementById("adc_sensor_value4");
+      var adcSensorvalue5 = document.getElementById("adc_sensor_value5");
+      var testnbresensorvalue = 0;
+
+      var btnget1 = document.getElementById("btn_get1");
+      var btnget2 = document.getElementById("btn_get2");
+      var btnget3 = document.getElementById("btn_get3");
+      var btnget4 = document.getElementById("btn_get4");
+      var btnget5 = document.getElementById("btn_get5");
+
+      var manualweight1 = document.getElementById("manual_weight1");
+      var manualweight2 = document.getElementById("manual_weight2");
+      var manualweight3 = document.getElementById("manual_weight3");
+      var manualweight4 = document.getElementById("manual_weight4");
+      var manualweight5 = document.getElementById("manual_weight5");
+
+      var BtngetADCscalingFinalvalue = document.getElementById("btn_get_adc_final_value");
+      var ADCslope = document.getElementById("ADC_slope");
+      var ADCintercept = document.getElementById("ADC_intercept");
+      var ADCr2 = document.getElementById("ADC_r2");
+      var AllFieldsFull = document.getElementById("all_fields_full");
+      var resultADC = document.getElementById("Result_adc");
+
+
 
       // Update the current slider value (each time you drag the slider handle)
       shdn_slider.oninput = function() {
@@ -348,6 +417,51 @@
 
       }
 
+   function linearRegression(x, y)
+{	
+    var xs = 0;  // sum(x)
+    var ys = 0;  // sum(y)
+    var xxs = 0; // sum(x*x)
+    var xys = 0; // sum(x*y)
+    var yys = 0; // sum(y*y)
+
+    var n = 0;
+    var nsous = 0;
+    for (; n < x.length && n < y.length; n++)
+    {
+    	if((x[n] == "?" || y[n] == "?"))
+    	{
+    		//console.log("not full")
+    		nsous++;
+    	}
+    	else if((x[n] == "0" || y[n] == "0"))
+    	{
+    		nsous++;
+    	}
+    	else
+    	{
+    	console.log("n="+n)
+    	console.log(" x[n]="+ x[n])
+    	console.log(" xs="+xs)
+    	console.log(" xxs="+xxs)
+    	var xn = parseInt(x[n], 10);
+    	var yn = parseInt(y[n], 10);
+        xs += xn;
+        ys += yn;
+        xxs += xn * xn;
+        xys += xn * yn;
+        yys += yn * yn;
+    	}
+    }
+
+    n -= nsous;
+    var div = n * xxs - xs * xs;
+    var gain = (n * xys - xs * ys) / div;
+    var offset = (ys * xxs - xs * xys) / div;
+    var correlation = Math.abs((xys * n - xs * ys) / Math.sqrt((xxs * n - xs * xs) * (yys * n - ys * ys)));
+
+    return { gain: gain, offset: offset, correlation: correlation, xs: xs, ys: ys, xxs: xxs, xys: xys, yys: yys};
+}
       function updateBattery()
       {
         var url = "http://www.nestbox.local/battery";
@@ -472,6 +586,126 @@
           });
         });  
       };
+
+      btnget1.onclick = function() {
+      	console.log(adcSensorvalue1.value);
+      	adcSensorvalue1.value = adcVal.textContent
+      	testnbresensorvalue++;
+      	console.log(testnbresensorvalue);
+
+      };
+      btnget2.onclick = function() {
+      	adcSensorvalue2.value= adcVal.textContent
+      };
+      btnget3.onclick = function() {
+      	adcSensorvalue3.value= adcVal.textContent
+      };
+      btnget4.onclick = function() {
+      	adcSensorvalue4.value= adcVal.textContent
+      };
+      btnget5.onclick = function() {
+      	adcSensorvalue5.value= adcVal.textContent
+      };
+
+
+
+
+      BtngetADCscalingFinalvalue.onclick = function(){
+
+      	testnbresensorvalue = 5;
+      	if(adcSensorvalue1.value == "?"){
+
+      		testnbresensorvalue--;
+      	}
+      	if(adcSensorvalue2.value == "?"){
+      	
+      		testnbresensorvalue--;
+      	}
+      	if(adcSensorvalue3.value == "?"){
+   
+      		testnbresensorvalue--;
+      	}
+      	if(adcSensorvalue4.value == "?"){
+ 
+      		testnbresensorvalue--;
+      	}
+      	if(adcSensorvalue5.value == "?"){
+      
+      		testnbresensorvalue--;
+      	}
+
+
+      	if(testnbresensorvalue > 1){
+
+      		var array_y = [adcSensorvalue1.value, adcSensorvalue2.value, adcSensorvalue3.value, adcSensorvalue4.value, adcSensorvalue5.value]
+      	var array_x = [manualweight1.value, manualweight2.value, manualweight3.value, 
+      	manualweight4.value, manualweight5.value]
+      	console.log(array_x)
+      	console.log(array_y)
+
+      	var linreg = linearRegression(array_x, array_y)
+      	console.log(linreg)
+      	console.log(linreg.xs)
+      	console.log(linreg.ys)
+      	console.log(linreg.xxs)
+      	console.log(linreg.xys)
+      	console.log(linreg.yys)
+
+
+
+      	a_field.value = linreg.gain
+      	ADCslope.value = linreg.gain
+      	ADCintercept.value = linreg.offset
+      	ADCr2.value = linreg.correlation
+      	}
+      	else{
+      		//console.log("false");
+      		//alert("Please complete all \"ADC sensor value\" fields")
+      		alert("Please complete at least 2 \"ADC sensor value\" fields")
+      	}
+
+
+      	
+
+
+
+		//console.log("Nombre de champs remplis = " + testnbresensorvalue);
+      };
+
+      window.onload = function () {
+ 
+var chart = new CanvasJS.Chart("chartContainer", {
+	animationEnabled: true,
+	theme: "light2",
+	title:{
+		text: "Simple Line Chart"
+	},
+	axisY:{
+		includeZero: false
+	},
+	data: [{        
+		type: "line",       
+		dataPoints: [
+			{ y: 450 },
+			{ y: 414},
+			{ y: 520, indexLabel: "highest",markerColor: "red", markerType: "triangle" },
+			{ y: 460 },
+			{ y: 450 },
+			{ y: 500 },
+			{ y: 480 },
+			{ y: 480 },
+			{ y: 410 , indexLabel: "lowest",markerColor: "DarkSlateGrey", markerType: "cross" },
+			{ y: 500 },
+			{ y: 480 },
+			{ y: 510 }
+		]
+	}]
+});
+chart.render();
+ 
+}     
+
+      
   
       // var imgTestInternet = "Hello World";
       // var urltest = "http://www.nestbox.local/";
